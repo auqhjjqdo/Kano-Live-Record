@@ -1,0 +1,35 @@
+name: Kano-Live-Record
+on:
+  watch:
+    types: started
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */3 * * *'
+jobs:
+  Kano-Live-Record:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+      - name: 加载代码
+        uses: actions/checkout@main
+      - name: 环境搭建
+        run: |
+          sudo snap install ffmpeg --channel=latest/edge
+          pip3 install setuptools
+          pip3 install streamlink
+          pip3 install PyNaCl
+          chmod 777 ./OneDriveUploader
+      - name: 更新onedrive_refresh_token
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          ONEDRIVE_REFRESHTOKEN: ${{ secrets.ONEDRIVE_REFRESHTOKEN }}
+        run: python3 set_refresh_token.py
+      - name: 运行录制脚本
+        env:
+          ONEDRIVE_REFRESHTOKEN: ${{ secrets.ONEDRIVE_REFRESHTOKEN }}
+          QSMG_TOKEN: ${{ secrets.QSMG_TOKEN }}
+        run: |
+          export PATH=/home/runner/.local/bin:$PATH
+          python3 kano_live_record.py
